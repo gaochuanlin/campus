@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片上传展示</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>欢迎分享校园活动</h2>
+            <div class="modal" id="modal">
+                <div class="modal-content">
+                    <span class="close-button" onclick="toggleModal()">&times;</span> <!-- 关闭按钮 -->
+                    <textarea id="captionInput" placeholder="有什么想分享的？"></textarea>
+                    <div class="preview" id="preview"></div>
+                    <div class="modal-footer">
+                        <input type="file" id="imageUpload" multiple accept="image/*" style="display:none" onchange="previewImages()">
+                        <button onclick="document.getElementById('imageUpload').click()">选择图片</button>
+                        <button onclick="uploadImages()">确定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="gallery" id="gallery"></div>
+    </div>
+    
+    <button class="add-button" onclick="toggleModal()">+</button>
+
+    <script src="script.js"></script>
+</body>
+</html>
+    <script>
+        // 根据URL参数判断用户角色
+        const urlParams = new URLSearchParams(window.location.search);
+        const role = urlParams.get('role');
+
+        // 隐藏删除按钮的函数
+        function hideDeleteButtons() {
+            const deleteButtons = document.querySelectorAll('.delete-button');
+            deleteButtons.forEach(button => button.style.display = 'none');
+        }
+
+        // 页面加载时隐藏删除按钮
+        if (role === 'user') {
+            hideDeleteButtons();
+        }
+
+        // 监听删除按钮的动态生成
+        const observer = new MutationObserver((mutationsList) => {
+            for (const mutation of mutationsList) {
+                if (mutation.type === 'childList') {
+                    // 如果有新的删除按钮生成，再次隐藏
+                    if (role === 'user') {
+                        hideDeleteButtons();
+                    }
+                }
+            }
+        });
+
+        // 监听 gallery 区域的变化
+        const gallery = document.getElementById('gallery');
+        observer.observe(gallery, { childList: true });
+    </script>
+</body>
+</html>

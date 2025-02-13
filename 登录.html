@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        html {
+            height: 100%;
+        }
+        body {
+            height: 100%;
+        }
+        .container {
+            height: 100%;
+            background-image: linear-gradient(to right, #fbc2eb, #a6c1ee);
+        }
+        .login-wrapper {
+            background-color: #fff;
+            width: 358px;
+            height: 600px;
+            border-radius: 15px;
+            padding: 0 50px;
+            position: relative;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .header {
+            font-size: 38px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 100px;
+        }
+        .input-item {
+            display: block;
+            width: 100%;
+            margin-bottom: 20px;
+            border: 0;
+            padding: 10px;
+            border-bottom: 1px solid rgb(128, 125, 125);
+            font-size: 15px;
+            outline: none;
+        }
+        .btn {
+            text-align: center;
+            padding: 10px;
+            width: 100%;
+            margin-top: 40px;
+            background-image: linear-gradient(to right, #a6c1ee, #fbc2eb);
+            color: #fff;
+            cursor: pointer;
+        }
+        .msg {
+            text-align: center;
+            line-height: 88px;
+        }
+        a {
+            text-decoration-line: none;
+            color: #abc1ee;
+        }
+        .form-wrapper {
+            display: none; /* 默认隐藏注册表单 */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-wrapper">
+            <div class="header" id="formHeader">Login</div>
+            <div class="form-wrapper" id="loginForm">
+                <input type="text" id="username" placeholder="username" class="input-item">
+                <input type="password" id="password" placeholder="password" class="input-item">
+                <div class="btn" onclick="login()">Login</div>
+                <div class="msg">
+                    Don't have an account? <a href="#" onclick="toggleForms()">Sign up</a>
+                </div>
+            </div>
+            <div class="form-wrapper" id="registerForm">
+                <div class="header">Register</div>
+                <input type="text" id="registerUsername" placeholder="username" class="input-item">
+                <input type="password" id="registerPassword" placeholder="password" class="input-item">
+                <div class="btn" onclick="register()">Register</div>
+                <div class="msg">
+                    <a href="#" onclick="toggleForms()">Back to Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化管理员账号
+        function initializeAdminAccount() {
+            const adminUsername = 'root';
+            const adminPassword = '2025';
+
+            if (!localStorage.getItem(adminUsername)) {
+                localStorage.setItem(adminUsername, adminPassword);
+            }
+        }
+
+        // 切换登录和注册表单
+        function toggleForms() {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const formHeader = document.getElementById('formHeader');
+
+            if (loginForm.style.display === "none") {
+                loginForm.style.display = "block";
+                registerForm.style.display = "none";
+                formHeader.innerText = 'Login';
+            } else {
+                loginForm.style.display = "none";
+                registerForm.style.display = "block";
+                formHeader.innerText = 'Register';
+            }
+        }
+
+        // 注册逻辑
+        function register() {
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+
+            // 检查用户名是否已存在
+            if (localStorage.getItem(username)) {
+                alert("账号已存在！");
+                return;
+            }
+
+            // 简单的用户注册逻辑
+            if (username && password) {
+                localStorage.setItem(username, password);
+                alert("注册成功，请登录！");
+                toggleForms();
+            } else {
+                alert("请输入用户名和密码！");
+            }
+        }
+
+        // 登录逻辑
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // 检查用户名和密码
+            const storedPassword = localStorage.getItem(username);
+
+            if (storedPassword && password === storedPassword) {
+                alert("登录成功！");
+
+                // 判断是否为管理员
+                if (username === 'root' && password === '2025') {
+                    // 管理员跳转到具有删除功能的上传页面
+                    window.location.href = 'upload.html?role=admin';
+                } else {
+                    // 普通用户跳转到只有上传功能的上传页面
+                    window.location.href = 'upload.html?role=user';
+                }
+            } else {
+                alert("用户名或密码错误！");
+            }
+        }
+
+        // 页面加载时初始化管理员账号
+        window.onload = function () {
+            initializeAdminAccount();
+            document.getElementById('loginForm').style.display = "block";
+        };
+    </script>
+</body>
+</html>

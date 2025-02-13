@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传详情</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h2>上传详情</h2>
+        <div id="uploadedImages" class="preview"></div>
+        <div id="captionText"></div>
+        <div id="uploadTime"></div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            const uploadDetails = JSON.parse(localStorage.getItem('uploadDetails'));
+
+            if (uploadDetails) {
+                const { images, caption, time } = uploadDetails;
+
+                // 显示所有上传的图片
+                const uploadedImagesDiv = document.getElementById('uploadedImages');
+                images.forEach(src => {
+                    const img = document.createElement('img');
+                    img.src = src;
+                    uploadedImagesDiv.appendChild(img);
+                });
+
+                // 显示完整的文本
+                const captionTextDiv = document.getElementById('captionText');
+                captionTextDiv.innerText = caption;
+
+                // 显示上传时间
+                const uploadTimeDiv = document.getElementById('uploadTime');
+                uploadTimeDiv.innerText = `上传时间: ${time}`;
+            } else {
+                // 如果没有数据，显示提示
+                document.body.innerHTML = '<p>没有上传的内容！</p>';
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传内容详情</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="detailsContainer"></div>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const images = JSON.parse(params.get('images'));
+        const caption = params.get('caption');
+        const uploadTime = params.get('uploadTime');
+
+        const detailsContainer = document.getElementById('detailsContainer');
+
+        const title = document.createElement('h2');
+        title.innerText = '上传内容详情';
+        detailsContainer.appendChild(title);
+
+        const timeNode = document.createElement('p');
+        timeNode.innerText = '上传时间: ' + uploadTime;
+        detailsContainer.appendChild(timeNode);
+
+        const captionNode = document.createElement('p');
+        captionNode.innerText = caption;
+        detailsContainer.appendChild(captionNode);
+
+        const imagesContainer = document.createElement('div');
+        imagesContainer.className = 'preview';
+        detailsContainer.appendChild(imagesContainer);
+
+        images.forEach(src => {
+            const img = document.createElement('img');
+            img.src = src;
+            imagesContainer.appendChild(img);
+        });
+    </script>
+</body>
+</html>
