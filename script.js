@@ -1,7 +1,19 @@
 // 切换模态框显示/隐藏
 function toggleModal() {
     const modal = document.getElementById('modal');
-    modal.style.display = modal.style.display === 'none' ? 'flex' : 'none';
+    const preview = document.getElementById('preview');
+    const captionInput = document.getElementById('captionInput');
+    const imageUpload = document.getElementById('imageUpload');
+
+    if (modal.style.display === 'none' || modal.style.display === '') {
+        // 打开模态框时清空内容
+        preview.innerHTML = '';
+        captionInput.value = '';
+        imageUpload.value = '';
+        modal.style.display = 'flex';
+    } else {
+        modal.style.display = 'none';
+    }
 }
 
 // 预览图片
@@ -21,24 +33,6 @@ function previewImages() {
     }
 }
 
-// 切换模态框显示/隐藏
-function toggleModal() {
-    const modal = document.getElementById('modal');
-    const preview = document.getElementById('preview');
-    const captionInput = document.getElementById('captionInput');
-    const imageUpload = document.getElementById('imageUpload');
-
-    if (modal.style.display === 'none' || modal.style.display === '') {
-        // 打开模态框时清空内容
-        preview.innerHTML = ''; // 清空预览
-        captionInput.value = ''; // 清空描述输入框
-        imageUpload.value = ''; // 清空文件选择
-        modal.style.display = 'flex';
-    } else {
-        modal.style.display = 'none';
-    }
-}
-
 // 上传图片到服务器
 async function uploadImages() {
     const input = document.getElementById('imageUpload');
@@ -55,14 +49,19 @@ async function uploadImages() {
         formData.append('images', file);
     }
 
+    console.log('准备上传图片...'); // 调试信息
+
     try {
-        const response = await fetch('http://localhost:5000/upload', {
+        const response = await fetch('https://campus-activity-platform.onrender.com/upload', {
             method: 'POST',
             body: formData,
         });
 
+        console.log('服务器响应:', response); // 调试信息
+
         if (response.ok) {
             const data = await response.json();
+            console.log('上传成功:', data); // 调试信息
             createGalleryItem(data.data);
             toggleModal();
         } else {
@@ -76,7 +75,7 @@ async function uploadImages() {
 // 从服务器加载上传记录
 async function loadUploads() {
     try {
-        const response = await fetch('http://localhost:5000/uploads');
+        const response = await fetch('https://campus-activity-platform.onrender.com/uploads');
         if (response.ok) {
             const uploads = await response.json();
             uploads.forEach((upload, index) => {
@@ -93,7 +92,7 @@ async function loadUploads() {
 // 删除上传记录
 async function deleteUpload(id) {
     try {
-        const response = await fetch(`http://localhost:5000/uploads/${id}`, {
+        const response = await fetch(`https://campus-activity-platform.onrender.com/uploads/${id}`, {
             method: 'DELETE',
         });
 
@@ -115,7 +114,7 @@ function createGalleryItem(upload, index) {
     const gallery = document.getElementById('gallery');
     const galleryItem = document.createElement('div');
     galleryItem.className = 'gallery-item';
-    galleryItem.setAttribute('data-id', upload._id); // 添加 data-id 属性
+    galleryItem.setAttribute('data-id', upload._id);
 
     // 图片
     const img = document.createElement('img');
