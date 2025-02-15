@@ -4,9 +4,16 @@ const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
 const bcrypt = require('bcryptjs'); // 用于密码加密
+const cloudinary = require('cloudinary').v2;
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+cloudinary.config({
+    cloud_name: 'drzodhz1b',
+    api_key: '531457894625658',2
+    api_secret: 'aTiadH9NQm_GgA-QZvbQGWxSCe4',
+});
 
 // 允许跨域请求
 app.use(cors({
@@ -138,21 +145,24 @@ initializeAdminAccount();
 // 上传图片和记录
 app.post('/upload', upload.array('images'), async (req, res) => {
     try {
-        console.log('收到上传请求:', req.files); // 调试信息
         const { caption } = req.body;
-        const images = req.files.map(file => `https://campus-activity-platform.onrender.com/uploads/${file.filename}`);
+
+        // 上传图片到 Cloudinary
+        const uploadPromises = req.files.map(file => {
+            return cloudinary.uploader.upload(file.path);
+        });
+
+        const results = await Promise.all(uploadPromises);
+        const images = results.map(result => result.secure_url);
+
+        // 保存记录到 MongoDB
         const uploadTime = new Date().toLocaleString();
-
-        console.log('图片信息:', images); // 调试信息
-
         const newUpload = new Upload({ caption, images, uploadTime });
         await newUpload.save();
 
-        console.log('上传记录已保存:', newUpload); // 调试信息
-
         res.status(201).json({ message: '上传成功', data: newUpload });
     } catch (error) {
-        console.error('上传失败:', error); // 调试信息
+        console.error('上传失败:', error);
         res.status(500).json({ message: '上传失败', error: error.message });
     }
 });

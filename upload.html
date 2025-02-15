@@ -331,26 +331,6 @@
             }
         }
 
-        // 删除上传记录
-        async function deleteUpload(id) {
-            try {
-                const response = await fetch(`https://campus-activity-platform.onrender.com/uploads/${id}`, {
-                    method: 'DELETE',
-                });
-
-                if (response.ok) {
-                    const galleryItem = document.querySelector(`[data-id="${id}"]`);
-                    if (galleryItem) {
-                        galleryItem.remove();
-                    }
-                } else {
-                    console.error('删除失败');
-                }
-            } catch (error) {
-                console.error('删除失败:', error);
-            }
-        }
-
         // 创建展示项
         function createGalleryItem(upload, index) {
             const gallery = document.getElementById('gallery');
@@ -359,7 +339,7 @@
             galleryItem.setAttribute('data-id', upload._id);
 
             const img = document.createElement('img');
-            img.src = upload.images[0];
+            img.src = upload.images[0]; // 使用 Cloudinary 返回的 URL
             galleryItem.appendChild(img);
 
             const captionNode = document.createElement('div');
@@ -381,12 +361,27 @@
             };
             galleryItem.appendChild(deleteButton);
 
-            galleryItem.onclick = function () {
-                const url = `details.html?images=${encodeURIComponent(JSON.stringify(upload.images))}&caption=${encodeURIComponent(upload.caption)}&uploadTime=${encodeURIComponent(upload.uploadTime)}`;
-                window.open(url, '_blank');
-            };
-
             gallery.appendChild(galleryItem);
+        }
+
+        // 删除上传记录
+        async function deleteUpload(id) {
+            try {
+                const response = await fetch(`https://campus-activity-platform.onrender.com/uploads/${id}`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    const galleryItem = document.querySelector(`[data-id="${id}"]`);
+                    if (galleryItem) {
+                        galleryItem.remove();
+                    }
+                } else {
+                    console.error('删除失败');
+                }
+            } catch (error) {
+                console.error('删除失败:', error);
+            }
         }
 
         // 页面加载时加载上传记录
