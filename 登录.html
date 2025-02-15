@@ -93,16 +93,6 @@
     </div>
 
     <script>
-        // 初始化管理员账号
-        function initializeAdminAccount() {
-            const adminUsername = 'root';
-            const adminPassword = '2025';
-
-            if (!localStorage.getItem(adminUsername)) {
-                localStorage.setItem(adminUsername, adminPassword);
-            }
-        }
-
         // 切换登录和注册表单
         function toggleForms() {
             const loginForm = document.getElementById('loginForm');
@@ -121,53 +111,75 @@
         }
 
         // 注册逻辑
-        function register() {
+        async function register() {
             const username = document.getElementById('registerUsername').value;
             const password = document.getElementById('registerPassword').value;
 
-            // 检查用户名是否已存在
-            if (localStorage.getItem(username)) {
-                alert("账号已存在！");
+            if (!username || !password) {
+                alert("请输入用户名和密码！");
                 return;
             }
 
-            // 简单的用户注册逻辑
-            if (username && password) {
-                localStorage.setItem(username, password);
-                alert("注册成功，请登录！");
-                toggleForms();
-            } else {
-                alert("请输入用户名和密码！");
+            try {
+                const response = await fetch('https://campus-activity-platform.onrender.com/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                const data = await response.json();
+                alert(data.message);
+
+                if (response.status === 201) {
+                    toggleForms();
+                }
+            } catch (error) {
+                alert("注册失败，请稍后重试！");
             }
         }
 
         // 登录逻辑
-        function login() {
+        async function login() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            // 检查用户名和密码
-            const storedPassword = localStorage.getItem(username);
+            if (!username || !password) {
+                alert("请输入用户名和密码！");
+                return;
+            }
 
-            if (storedPassword && password === storedPassword) {
-                alert("登录成功！");
+            try {
+                const response = await fetch('https://campus-activity-platform.onrender.com/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
 
-                // 判断是否为管理员
-                if (username === 'root' && password === '2025') {
-                    // 管理员跳转到具有删除功能的上传页面
-                    window.location.href = 'upload.html?role=admin';
+                const data = await response.json();
+
+                if (response.status === 200) {
+                    alert(data.message);
+
+                    // 根据用户角色跳转到不同页面
+                    if (data.role === 'admin') {
+                        window.location.href = 'upload.html?role=admin';
+                    } else {
+                        window.location.href = 'upload.html?role=user';
+                    }
                 } else {
-                    // 普通用户跳转到只有上传功能的上传页面
-                    window.location.href = 'upload.html?role=user';
+                    alert(data.message);
                 }
-            } else {
-                alert("用户名或密码错误！");
+            } catch (error) {
+                alert("登录失败，请稍后重试！");
             }
         }
 
-        // 页面加载时初始化管理员账号
+        // 页面加载时显示登录表单
         window.onload = function () {
-            initializeAdminAccount();
             document.getElementById('loginForm').style.display = "block";
         };
     </script>
