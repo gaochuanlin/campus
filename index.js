@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
-const bcrypt = require('bcrypt'); // 用于密码加密
+const bcrypt = require('bcryptjs'); // 用于密码加密
 
 const app = express();
 const PORT = process.env.PORT || 5000;
