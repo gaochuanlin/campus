@@ -4,39 +4,204 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>上传内容详情</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        #detailsContainer {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        p {
+            font-size: 16px;
+            color: #666;
+            margin: 10px 0;
+        }
+
+        .preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .preview img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .preview img:hover {
+            transform: scale(1.05);
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            text-align: center;
+        }
+
+        .modal-content img {
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: 10px;
+        }
+
+        /* 箭头样式 */
+        .arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 36px;
+            color: white;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .arrow.left {
+            left: 20px;
+        }
+
+        .arrow.right {
+            right: 20px;
+        }
+
+        /* 关闭按钮样式 */
+        .close-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 36px;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
     <div id="detailsContainer"></div>
+
+    <!-- 模态框 -->
+    <div class="modal" id="modal">
+        <span class="close-button" onclick="closeModal()">&times;</span>
+        <div class="modal-content">
+            <span class="arrow left" onclick="changeImage(-1)">&#10094;</span>
+            <img id="modalImage" src="" alt="放大图片">
+            <span class="arrow right" onclick="changeImage(1)">&#10095;</span>
+        </div>
+    </div>
+
     <script>
+        // 解析 URL 参数
         const params = new URLSearchParams(window.location.search);
-        const images = JSON.parse(params.get('images'));
-        const caption = params.get('caption');
-        const uploadTime = params.get('uploadTime');
+        const images = JSON.parse(params.get('images') || [];
+        const caption = params.get('caption') || '无描述';
+        const uploadTime = params.get('uploadTime') || '未知时间';
 
         const detailsContainer = document.getElementById('detailsContainer');
 
+        // 创建标题
         const title = document.createElement('h2');
         title.innerText = '上传内容详情';
         detailsContainer.appendChild(title);
 
+        // 创建上传时间
         const timeNode = document.createElement('p');
         timeNode.innerText = '上传时间: ' + uploadTime;
         detailsContainer.appendChild(timeNode);
 
+        // 创建文字内容
         const captionNode = document.createElement('p');
-        captionNode.innerText = caption;
+        captionNode.innerText = '描述: ' + caption;
         detailsContainer.appendChild(captionNode);
 
+        // 创建图片容器
         const imagesContainer = document.createElement('div');
         imagesContainer.className = 'preview';
         detailsContainer.appendChild(imagesContainer);
 
-        images.forEach(src => {
-            const img = document.createElement('img');
-            img.src = src;
-            imagesContainer.appendChild(img);
-        });
+        // 如果没有图片，显示提示
+        if (images.length === 0) {
+            const noImagesNode = document.createElement('p');
+            noImagesNode.innerText = '暂无图片';
+            imagesContainer.appendChild(noImagesNode);
+        } else {
+            // 遍历图片并添加到页面
+            images.forEach((src, index) => {
+                const img = document.createElement('img');
+                img.src = src;
+                img.alt = '上传的图片';
+                img.onclick = () => openModal(index); // 点击图片打开模态框
+                imagesContainer.appendChild(img);
+            });
+        }
+
+        // 模态框相关逻辑
+        let currentImageIndex = 0;
+
+        // 打开模态框
+        function openModal(index) {
+            currentImageIndex = index;
+            const modal = document.getElementById('modal');
+            const modalImage = document.getElementById('modalImage');
+            modalImage.src = images[currentImageIndex];
+            modal.style.display = 'flex';
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            modal.style.display = 'none';
+        }
+
+        // 切换图片
+        function changeImage(offset) {
+            currentImageIndex += offset;
+            if (currentImageIndex < 0) {
+                currentImageIndex = images.length - 1;
+            } else if (currentImageIndex >= images.length) {
+                currentImageIndex = 0;
+            }
+            const modalImage = document.getElementById('modalImage');
+            modalImage.src = images[currentImageIndex];
+        }
+
+        // 点击模态框外部关闭模态框
+        window.onclick = function (event) {
+            const modal = document.getElementById('modal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        };
     </script>
 </body>
 </html>
