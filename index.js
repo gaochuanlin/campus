@@ -109,6 +109,32 @@ app.post('/login', async (req, res) => {
     }
 });
 
+// 初始化管理员账号
+async function initializeAdminAccount() {
+    const adminUsername = 'admin';
+    const adminPassword = 'gcl2025';
+
+    try {
+        // 检查管理员账号是否已存在
+        const existingAdmin = await User.findOne({ username: adminUsername });
+        if (!existingAdmin) {
+            // 加密密码
+            const hashedPassword = await bcrypt.hash(adminPassword, 10);
+            // 创建管理员账号
+            const adminUser = new User({ username: adminUsername, password: hashedPassword, role: 'admin' });
+            await adminUser.save();
+            console.log('管理员账号已创建');
+        } else {
+            console.log('管理员账号已存在');
+        }
+    } catch (error) {
+        console.error('初始化管理员账号失败:', error);
+    }
+}
+
+// 启动服务器时初始化管理员账号
+initializeAdminAccount();
+
 // 上传图片和记录
 app.post('/upload', upload.array('images'), async (req, res) => {
     try {
