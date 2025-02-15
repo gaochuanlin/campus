@@ -395,32 +395,33 @@
         };
 
         // 根据URL参数判断用户角色
-        const urlParams = new URLSearchParams(window.location.search);
-        const role = urlParams.get('role');
+const urlParams = new URLSearchParams(window.location.search);
+const role = urlParams.get('role');
 
-        // 隐藏删除按钮的函数
-        function hideDeleteButtons() {
-            const deleteButtons = document.querySelectorAll('.delete-button');
-            deleteButtons.forEach(button => button.style.display = 'none');
-        }
+// 隐藏删除按钮的函数
+function hideDeleteButtons() {
+    const deleteButtons = document.querySelectorAll('.delete-button');
+    deleteButtons.forEach(button => button.style.display = 'none');
+}
 
-        if (role === 'user') {
-            hideDeleteButtons();
-        }
+// 如果用户角色是普通用户，隐藏删除按钮
+if (role === 'user') {
+    hideDeleteButtons();
+}
 
-       // 监听 DOM 变化，确保新增的删除按钮也被隐藏
-        const observer = new MutationObserver((mutationsList) => {
-            for (const mutation of mutationsList) {
-                if (mutation.type === 'childList') {
-                    if (role === 'user') {
-                        hideDeleteButtons();
-                    }
-                }
+// 监听 DOM 变化，确保新增的删除按钮也被隐藏
+const observer = new MutationObserver((mutationsList) => {
+    for (const mutation of mutationsList) {
+        if (mutation.type === 'childList') {
+            if (role === 'user') {
+                hideDeleteButtons();
             }
-        });
+        }
+    }
+});
 
-        const gallery = document.getElementById('gallery');
-        observer.observe(gallery, { childList: true });
+const gallery = document.getElementById('gallery');
+observer.observe(gallery, { childList: true });
     </script>
 </body>
 </html>
