@@ -11,8 +11,8 @@ const PORT = process.env.PORT || 5000;
 
 cloudinary.config({
     cloud_name: 'drzodhz1b',
-    api_key: '531457894625658',2
-    api_secret: 'aTiadH9NQm_GgA-QZvbQGWxSCe4',
+    api_key: '531457894625658',
+    api_secret: 'aTiadH9NQm_GgA-QZvbQGWxSCe4'
 });
 
 // 允许跨域请求
@@ -49,6 +49,7 @@ const uploadSchema = new mongoose.Schema({
 
 const Upload = mongoose.model('Upload', uploadSchema);
 
+
 // 配置 Multer 用于文件上传
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -61,12 +62,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// 创建上传目录（如果不存在）
-const fs = require('fs');
-const dir = './uploads';
-if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir);
-}
+
 
 // 注册接口
 app.post('/register', async (req, res) => {
@@ -147,9 +143,11 @@ app.post('/upload', upload.array('images'), async (req, res) => {
     try {
         const { caption } = req.body;
 
-        // 上传图片到 Cloudinary
+       // 直接上传图片到 Cloudinary
         const uploadPromises = req.files.map(file => {
-            return cloudinary.uploader.upload(file.path);
+            return cloudinary.uploader.upload(file.path, {
+                folder: 'campus-activity-platform' // 可选：将图片上传到指定文件夹
+            });
         });
 
         const results = await Promise.all(uploadPromises);
