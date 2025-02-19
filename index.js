@@ -145,13 +145,20 @@ app.post('/upload', upload.array('images'), async (req, res) => {
 
        // 直接上传图片到 Cloudinary
         const uploadPromises = req.files.map(file => {
-            return cloudinary.uploader.upload(file.path, {
-                folder: 'campus-activity-platform' // 可选：将图片上传到指定文件夹
-            });
-        });
+    return cloudinary.uploader.upload_stream({
+        folder: 'campus-activity-platform'
+    }, (error, result) => {
+        if (error) {
+            console.error('Cloudinary 上传失败:', error);
+            throw error;
+        }
+        return result;
+    }).end(file.buffer);
+});
 
-        const results = await Promise.all(uploadPromises);
-        const images = results.map(result => result.secure_url);
+try {
+    const results = await Promise.all(uploadPromises);
+    const images = results.map(result => result.secure_url);
 
         // 保存记录到 MongoDB
         const uploadTime = new Date().toLocaleString();
