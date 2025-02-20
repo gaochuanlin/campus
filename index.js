@@ -155,13 +155,18 @@ async function getBaiduAIAccessToken() {
 
 // 图像识别函数
 async function recognizeImage(imageUrl) {
-    const accessToken = await getBaiduAIAccessToken();
-    const response = await axios.post(BAIDU_AI_API_URL, `url=${imageUrl}&access_token=${accessToken}`, {
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        }
-    });
-    return response.data;
+    try {
+        const accessToken = await getBaiduAIAccessToken();
+        const response = await axios.post(BAIDU_AI_API_URL, `url=${imageUrl}&access_token=${accessToken}`, {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('图像识别失败:', error);
+        throw error; // 抛出错误以便上层捕获
+    }
 }
 
 // 上传图片和记录
@@ -171,16 +176,19 @@ app.post('/upload', upload.array('images'), async (req, res) => {
 
         // 直接上传图片到 Cloudinary
         const uploadPromises = req.files.map(file => {
-            return cloudinary.uploader.upload_stream({
-                folder: 'campus-activity-platform'
-            }, (error, result) => {
-                if (error) {
-                    console.error('Cloudinary 上传失败:', error);
-                    throw error;
-                }
-                return result;
-            }).end(file.buffer);
-        });
+    return new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_stream({
+            folder: 'campus-activity-platform'
+        }, (error, result) => {
+            if (error) {
+                console.error('Cloudinary 上传失败:', error);
+                reject(error); // 抛出错误
+            } else {
+                resolve(result); // 返回结果
+            }
+        }).end(file.buffer);
+    });
+});
 
         const results = await Promise.all(uploadPromises);
         const images = results.map(result => result.secure_url);
