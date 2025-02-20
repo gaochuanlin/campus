@@ -5,6 +5,7 @@ const cors = require('cors');
 const path = require('path');
 const bcrypt = require('bcryptjs'); // 用于密码加密
 const cloudinary = require('cloudinary').v2;
+const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -14,6 +15,29 @@ cloudinary.config({
     api_key: '531457894625658',
     api_secret: 'aTiadH9NQm_GgA-QZvbQGWxSCe4'
 });
+
+// 百度AI的API Key和Secret Key
+const BAIDU_API_KEY = '983tWkabaILvWT5tM1Ajzd1w';
+const BAIDU_SECRET_KEY = '6dqdmwRPTbRdB9AoUfV3uDsF6LFr2REn';
+
+// 百度AI图像识别函数
+async function recognizeImage(imageUrl) {
+    const accessTokenUrl = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${BAIDU_API_KEY}&client_secret=${BAIDU_SECRET_KEY}`;
+    const tokenResponse = await axios.get(accessTokenUrl);
+    const accessToken = tokenResponse.data.access_token;
+
+    const recognizeUrl = `https://aip.baidubce.com/rest/2.0/image-classify/v2/advanced_general?access_token=${accessToken}`;
+    const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    const imageBase64 = Buffer.from(imageResponse.data, 'binary').toString('base64');
+
+    const recognizeResponse = await axios.post(recognizeUrl, `image=${encodeURIComponent(imageBase64)}`, {
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+    });
+
+    return recognizeResponse.data;
+}
 
 // 允许跨域请求
 app.use(cors({
@@ -45,6 +69,7 @@ const uploadSchema = new mongoose.Schema({
     caption: String,
     images: [String], // 存储图片的 URL
     uploadTime: String,
+    keywords: String, // 存储识别结果中的关键词
 });
 
 const Upload = mongoose.model('Upload', uploadSchema);
@@ -156,9 +181,13 @@ app.post('/upload', upload.array('images'), async (req, res) => {
         const results = await Promise.all(uploadPromises);
         const images = results.map(result => result.secure_url);
 
+        // 对每张图片进行识别并保存识别结果
+        const recognitionResults = await Promise.all(images.map(imageUrl => recognizeImage(imageUrl)));
+        const keywords = recognitionResults.map(result => result.result.map(item => item.keyword).join(', '));
+
         // 保存记录到 MongoDB
         const uploadTime = new Date().toLocaleString();
-        const newUpload = new Upload({ caption, images, uploadTime });
+        const newUpload = new Upload({ caption, images, uploadTime, keywords });
         await newUpload.save();
 
         res.status(201).json({ message: '上传成功', data: newUpload });
@@ -167,7 +196,6 @@ app.post('/upload', upload.array('images'), async (req, res) => {
         res.status(500).json({ message: '上传失败', error: error.message });
     }
 });
-
 // 获取所有上传记录
 app.get('/uploads', async (req, res) => {
     try {
