@@ -69,7 +69,7 @@ const uploadSchema = new mongoose.Schema({
     caption: String,
     images: [String], // 存储图片的 URL
     uploadTime: String,
-    keywords: String, // 存储识别结果中的关键词
+    keywords: [String], // 存储识别结果中的关键词（数组）
 });
 
 const Upload = mongoose.model('Upload', uploadSchema);
@@ -183,11 +183,14 @@ app.post('/upload', upload.array('images'), async (req, res) => {
 
         // 对每张图片进行识别并保存识别结果
         const recognitionResults = await Promise.all(images.map(imageUrl => recognizeImage(imageUrl)));
-        const keywords = recognitionResults.map(result => result.result.map(item => item.keyword).join(', '));
+        const keywords = recognitionResults.map(result => result.result.map(item => item.keyword)); // 返回一个二维数组
+
+        // 将二维数组扁平化为一维数组
+        const flattenedKeywords = keywords.flat();
 
         // 保存记录到 MongoDB
         const uploadTime = new Date().toLocaleString();
-        const newUpload = new Upload({ caption, images, uploadTime, keywords });
+        const newUpload = new Upload({ caption, images, uploadTime, keywords: flattenedKeywords });
         await newUpload.save();
 
         res.status(201).json({ message: '上传成功', data: newUpload });
@@ -196,6 +199,7 @@ app.post('/upload', upload.array('images'), async (req, res) => {
         res.status(500).json({ message: '上传失败', error: error.message });
     }
 });
+
 // 获取所有上传记录
 app.get('/uploads', async (req, res) => {
     try {
