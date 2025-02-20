@@ -187,12 +187,22 @@ app.post('/upload', upload.array('images'), async (req, res) => {
 
         // 对每张图片进行识别
         const recognitionResults = await Promise.all(images.map(async (imageUrl) => {
-            const recognition = await recognizeImage(imageUrl);
-            return {
-                imageUrl,
-                keywords: recognition.result.map(item => item.keyword)
-            };
+            try {
+                const recognition = await recognizeImage(imageUrl);
+                return {
+                    imageUrl,
+                    keywords: recognition.result.map(item => item.keyword)
+                };
+            } catch (error) {
+                console.error('图像识别失败:', error);
+                return {
+                    imageUrl,
+                    keywords: [] // 返回空数组或其他默认值
+                };
+            }
         }));
+
+        console.log(recognitionResults); // 打印识别结果
 
         // 保存记录到 MongoDB
         const uploadTime = new Date().toLocaleString();
@@ -200,16 +210,19 @@ app.post('/upload', upload.array('images'), async (req, res) => {
             caption, 
             images, 
             uploadTime,
-            recognitionResults // 保存识别结果
+            recognitionResults // 确保这里正确传递
         });
+
+        console.log(newUpload); // 打印检查
         await newUpload.save();
 
-        res.status(201).json({ message: '上传成功', data: newUpload });
+        res.status(201).json({ message: '成功', data: newUpload });
     } catch (error) {
         console.error('上传失败:', error);
         res.status(500).json({ message: '上传失败', error: error.message });
     }
 });
+
 // 获取所有上传记录
 app.get('/uploads', async (req, res) => {
     try {
