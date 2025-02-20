@@ -9,11 +9,7 @@ const cloudinary = require('cloudinary').v2;
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-cloudinary.config({
-    cloud_name: 'drzodhz1b',
-    api_key: '531457894625658',
-    api_secret: 'aTiadH9NQm_GgA-QZvbQGWxSCe4'
-});
+
 
 // 允许跨域请求
 app.use(cors({
@@ -62,7 +58,12 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-
+// 创建上传目录（如果不存在）
+const fs = require('fs');
+const dir = './uploads';
+if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir);
+}
 
 // 注册接口
 app.post('/register', async (req, res) => {
@@ -143,22 +144,13 @@ app.post('/upload', upload.array('images'), async (req, res) => {
     try {
         const { caption } = req.body;
 
-       // 直接上传图片到 Cloudinary
+        // 上传图片到 Cloudinary
         const uploadPromises = req.files.map(file => {
-    return cloudinary.uploader.upload_stream({
-        folder: 'campus-activity-platform'
-    }, (error, result) => {
-        if (error) {
-            console.error('Cloudinary 上传失败:', error);
-            throw error;
-        }
-        return result;
-    }).end(file.buffer);
-});
+            return cloudinary.uploader.upload(file.path);
+        });
 
-try {
-    const results = await Promise.all(uploadPromises);
-    const images = results.map(result => result.secure_url);
+        const results = await Promise.all(uploadPromises);
+        const images = results.map(result => result.secure_url);
 
         // 保存记录到 MongoDB
         const uploadTime = new Date().toLocaleString();
