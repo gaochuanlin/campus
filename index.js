@@ -5,7 +5,6 @@ const cors = require('cors');
 const path = require('path');
 const bcrypt = require('bcryptjs'); // 用于密码加密
 const cloudinary = require('cloudinary').v2;
-const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -46,10 +45,6 @@ const uploadSchema = new mongoose.Schema({
     caption: String,
     images: [String], // 存储图片的 URL
     uploadTime: String,
-    recognitionResults: [{
-        imageUrl: String,
-        keywords: [String]
-    }]
 });
 
 const Upload = mongoose.model('Upload', uploadSchema);
@@ -143,88 +138,34 @@ async function initializeAdminAccount() {
 // 启动服务器时初始化管理员账号
 initializeAdminAccount();
 
-// 百度 AI 开放平台的 API 地址
-const BAIDU_AI_API_URL = 'https://aip.baidubce.com/rest/2.0/image-classify/v2/advanced_general';
-
-// 获取百度 AI 的 Access Token
-async function getBaiduAIAccessToken() {
-    const url = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=983tWkabaILvWT5tM1Ajzd1w&client_secret=6dqdmwRPTbRdB9AoUfV3uDsF6LFr2REn`;
-    const response = await axios.post(url);
-    return response.data.access_token;
-}
-
-// 图像识别函数
-async function recognizeImage(imageUrl) {
-    try {
-        const accessToken = await getBaiduAIAccessToken();
-        const response = await axios.post(BAIDU_AI_API_URL, `url=${imageUrl}&access_token=${accessToken}`, {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-        });
-        return response.data;
-    } catch (error) {
-        console.error('图像识别失败:', error);
-        throw error; // 抛出错误以便上层捕获
-    }
-}
-
 // 上传图片和记录
 app.post('/upload', upload.array('images'), async (req, res) => {
     try {
         const { caption } = req.body;
 
-        // 直接上传图片到 Cloudinary
+       // 直接上传图片到 Cloudinary
         const uploadPromises = req.files.map(file => {
-    return new Promise((resolve, reject) => {
-        cloudinary.uploader.upload_stream({
-            folder: 'campus-activity-platform'
-        }, (error, result) => {
-            if (error) {
-                console.error('Cloudinary 上传失败:', error);
-                reject(error); // 抛出错误
-            } else {
-                resolve(result); // 返回结果
-            }
-        }).end(file.buffer);
-    });
+    return cloudinary.uploader.upload_stream({
+        folder: 'campus-activity-platform'
+    }, (error, result) => {
+        if (error) {
+            console.error('Cloudinary 上传失败:', error);
+            throw error;
+        }
+        return result;
+    }).end(file.buffer);
 });
 
-        const results = await Promise.all(uploadPromises);
-        const images = results.map(result => result.secure_url);
-
-        // 对每张图片进行识别
-        const recognitionResults = await Promise.all(images.map(async (imageUrl) => {
-            try {
-                const recognition = await recognizeImage(imageUrl);
-                return {
-                    imageUrl,
-                    keywords: recognition.result.map(item => item.keyword)
-                };
-            } catch (error) {
-                console.error('图像识别失败:', error);
-                return {
-                    imageUrl,
-                    keywords: [] // 返回空数组或其他默认值
-                };
-            }
-        }));
-
-        console.log(recognitionResults); // 打印识别结果
+try {
+    const results = await Promise.all(uploadPromises);
+    const images = results.map(result => result.secure_url);
 
         // 保存记录到 MongoDB
         const uploadTime = new Date().toLocaleString();
-        const newUpload = new Upload({ 
-            caption, 
-            images, 
-            uploadTime,
-            recognitionResults // 确保这里正确传递
-        });
-
-        console.log(newUpload); // 打印检查
+        const newUpload = new Upload({ caption, images, uploadTime });
         await newUpload.save();
 
-        res.status(201).json({ message: '成功', data: newUpload });
+        res.status(201).json({ message: '上传成功', data: newUpload });
     } catch (error) {
         console.error('上传失败:', error);
         res.status(500).json({ message: '上传失败', error: error.message });
