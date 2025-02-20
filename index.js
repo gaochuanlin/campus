@@ -5,15 +5,17 @@ const cors = require('cors');
 const path = require('path');
 const bcrypt = require('bcryptjs'); // 用于密码加密
 const cloudinary = require('cloudinary').v2;
-const axios = require('axios');
+const AipImageClassifyClient = require('baidu-aip-sdk').imageClassify; // 引入百度AI SDK
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// 百度AI配置
+const APP_ID = '117602217';
+const API_KEY = '983tWkabaILvWT5tM1Ajzd1w'; 
+const SECRET_KEY = '6dqdmwRPTbRdB9AoUfV3uDsF6LFr2REn'; 
 
-// 百度AI的API Key和Secret Key
-const BAIDU_API_KEY = '983tWkabaILvWT5tM1Ajzd1w';
-const BAIDU_SECRET_KEY = 'EjdI4Ln43DHzE1ulgrmjMU5v7dbU5Sp9';
+const client = new AipImageClassifyClient(APP_ID, API_KEY, SECRET_KEY);
 
 cloudinary.config({
     cloud_name: 'drzodhz1b',
@@ -51,7 +53,7 @@ const uploadSchema = new mongoose.Schema({
     caption: String,
     images: [String], // 存储图片的 URL
     uploadTime: String,
-    recognitionResults: [Object] // 保存识别结果
+    recognitionResults: [Object] // 存储百度AI的识别结果
 });
 
 const Upload = mongoose.model('Upload', uploadSchema);
@@ -144,31 +146,12 @@ async function initializeAdminAccount() {
 // 启动服务器时初始化管理员账号
 initializeAdminAccount();
 
-
-
-// 获取百度AI的Access Token
-async function getBaiduAccessToken() {
-    const url = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${BAIDU_API_KEY}&client_secret=${BAIDU_SECRET_KEY}`;
-    const response = await axios.post(url);
-    return response.data.access_token;
-}
-
-// 调用百度AI的通用物体和场景识别API
-async function recognizeImage(imageUrl) {
-    const accessToken = await getBaiduAccessToken();
-    const url = `https://aip.baidubce.com/rest/2.0/image-classify/v2/advanced_general?access_token=${accessToken}`;
-    const response = await axios.post(url, { url: imageUrl }, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    });
-    return response.data;
-}
-
 // 上传图片和记录
 app.post('/upload', upload.array('images'), async (req, res) => {
     try {
         const { caption } = req.body;
 
-        // 上传图片到 Cloudinary
+        // 直接上传图片到 Cloudinary
         const uploadPromises = req.files.map(file => {
             return cloudinary.uploader.upload_stream({
                 folder: 'campus-activity-platform'
@@ -184,20 +167,18 @@ app.post('/upload', upload.array('images'), async (req, res) => {
         const results = await Promise.all(uploadPromises);
         const images = results.map(result => result.secure_url);
 
-        // 调用百度AI识别每张图片
-        const recognitionResults = [];
-        for (const imageUrl of images) {
-            const recognitionResult = await recognizeImage(imageUrl);
-            recognitionResults.push(recognitionResult);
-        }
+        // 调用百度AI进行图片识别
+        const recognitionResults = await Promise.all(req.files.map(file => {
+            return client.advancedGeneral(file.buffer.toString('base64'));
+        }));
 
-        // 保存记录到 MongoDB
+        // 保存识别结果到 MongoDB
         const uploadTime = new Date().toLocaleString();
-        const newUpload = new Upload({
-            caption,
-            images,
+        const newUpload = new Upload({ 
+            caption, 
+            images, 
             uploadTime,
-            recognitionResults // 保存识别结果
+            recognitionResults: recognitionResults.map(result => result.result) // 保存识别结果
         });
         await newUpload.save();
 
@@ -226,30 +207,6 @@ app.delete('/uploads/:id', async (req, res) => {
         res.status(200).json({ message: '删除成功' });
     } catch (error) {
         res.status(500).json({ message: '删除失败', error: error.message });
-    }
-});
-
-// 搜索上传记录
-app.get('/search', async (req, res) => {
-    try {
-        const { keyword } = req.query;
-
-        // 从数据库中查找包含关键词的识别结果
-        const uploads = await Upload.find({
-            recognitionResults: {
-                $elemMatch: {
-                    result: {
-                        $elemMatch: {
-                            keyword: { $regex: keyword, $options: 'i' } // 模糊匹配
-                        }
-                    }
-                }
-            }
-        });
-
-        res.status(200).json(uploads);
-    } catch (error) {
-        res.status(500).json({ message: '搜索失败', error: error.message });
     }
 });
 
