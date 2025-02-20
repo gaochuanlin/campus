@@ -10,6 +10,11 @@ const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+
+// 百度AI的API Key和Secret Key
+const BAIDU_API_KEY = '983tWkabaILvWT5tM1Ajzd1w';
+const BAIDU_SECRET_KEY = 'EjdI4Ln43DHzE1ulgrmjMU5v7dbU5Sp9';
+
 cloudinary.config({
     cloud_name: 'drzodhz1b',
     api_key: '531457894625658',
@@ -46,10 +51,10 @@ const uploadSchema = new mongoose.Schema({
     caption: String,
     images: [String], // 存储图片的 URL
     uploadTime: String,
+    recognitionResults: [Object] // 保存识别结果
 });
 
 const Upload = mongoose.model('Upload', uploadSchema);
-
 
 // 配置 Multer 用于文件上传
 const storage = multer.diskStorage({
@@ -139,9 +144,7 @@ async function initializeAdminAccount() {
 // 启动服务器时初始化管理员账号
 initializeAdminAccount();
 
-// 百度AI的API Key和Secret Key
-const BAIDU_API_KEY = '983tWkabaILvWT5tM1Ajzd1w';
-const BAIDU_SECRET_KEY = 'EjdI4Ln43DHzE1ulgrmjMU5v7dbU5Sp9';
+
 
 // 获取百度AI的Access Token
 async function getBaiduAccessToken() {
