@@ -5,17 +5,10 @@ const cors = require('cors');
 const path = require('path');
 const bcrypt = require('bcryptjs'); // 用于密码加密
 const cloudinary = require('cloudinary').v2;
-const AipImageClassifyClient = require('baidu-aip-sdk').imageClassify; // 引入百度AI SDK
+const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-// 百度AI配置
-const APP_ID = '117602217';
-const API_KEY = '983tWkabaILvWT5tM1Ajzd1w'; 
-const SECRET_KEY = '6dqdmwRPTbRdB9AoUfV3uDsF6LFr2REn'; 
-
-const client = new AipImageClassifyClient(APP_ID, API_KEY, SECRET_KEY);
 
 cloudinary.config({
     cloud_name: 'drzodhz1b',
@@ -53,10 +46,14 @@ const uploadSchema = new mongoose.Schema({
     caption: String,
     images: [String], // 存储图片的 URL
     uploadTime: String,
-    recognitionResults: [Object] // 存储百度AI的识别结果
+    recognitionResults: [{
+        imageUrl: String,
+        keywords: [String]
+    }]
 });
 
 const Upload = mongoose.model('Upload', uploadSchema);
+
 
 // 配置 Multer 用于文件上传
 const storage = multer.diskStorage({
@@ -146,6 +143,27 @@ async function initializeAdminAccount() {
 // 启动服务器时初始化管理员账号
 initializeAdminAccount();
 
+// 百度 AI 开放平台的 API 地址
+const BAIDU_AI_API_URL = 'https://aip.baidubce.com/rest/2.0/image-classify/v2/advanced_general';
+
+// 获取百度 AI 的 Access Token
+async function getBaiduAIAccessToken() {
+    const url = `https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=983tWkabaILvWT5tM1Ajzd1w&client_secret=6dqdmwRPTbRdB9AoUfV3uDsF6LFr2REn`;
+    const response = await axios.post(url);
+    return response.data.access_token;
+}
+
+// 图像识别函数
+async function recognizeImage(imageUrl) {
+    const accessToken = await getBaiduAIAccessToken();
+    const response = await axios.post(BAIDU_AI_API_URL, `url=${imageUrl}&access_token=${accessToken}`, {
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+    });
+    return response.data;
+}
+
 // 上传图片和记录
 app.post('/upload', upload.array('images'), async (req, res) => {
     try {
@@ -167,18 +185,22 @@ app.post('/upload', upload.array('images'), async (req, res) => {
         const results = await Promise.all(uploadPromises);
         const images = results.map(result => result.secure_url);
 
-        // 调用百度AI进行图片识别
-        const recognitionResults = await Promise.all(req.files.map(file => {
-            return client.advancedGeneral(file.buffer.toString('base64'));
+        // 对每张图片进行识别
+        const recognitionResults = await Promise.all(images.map(async (imageUrl) => {
+            const recognition = await recognizeImage(imageUrl);
+            return {
+                imageUrl,
+                keywords: recognition.result.map(item => item.keyword)
+            };
         }));
 
-        // 保存识别结果到 MongoDB
+        // 保存记录到 MongoDB
         const uploadTime = new Date().toLocaleString();
         const newUpload = new Upload({ 
             caption, 
             images, 
             uploadTime,
-            recognitionResults: recognitionResults.map(result => result.result) // 保存识别结果
+            recognitionResults // 保存识别结果
         });
         await newUpload.save();
 
@@ -188,7 +210,6 @@ app.post('/upload', upload.array('images'), async (req, res) => {
         res.status(500).json({ message: '上传失败', error: error.message });
     }
 });
-
 // 获取所有上传记录
 app.get('/uploads', async (req, res) => {
     try {
