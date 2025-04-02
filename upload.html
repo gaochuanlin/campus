@@ -478,7 +478,7 @@ async function searchImages() {
             };
             galleryItem.appendChild(deleteButton);
 
-            galleryItem.onclick = function () {
+galleryItem.onclick = function () {
     const role = new URLSearchParams(window.location.search).get('role');
     const url = `details.html?images=${encodeURIComponent(JSON.stringify(upload.images))}&caption=${encodeURIComponent(upload.caption)}&uploadTime=${encodeURIComponent(upload.uploadTime)}&id=${upload._id}&role=${role}`;
     window.open(url, '_blank');
