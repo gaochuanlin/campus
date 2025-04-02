@@ -64,6 +64,16 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
+// 定义评论模型
+const commentSchema = new mongoose.Schema({
+    uploadId: { type: mongoose.Schema.Types.ObjectId, required: true },
+    username: { type: String, required: true },
+    content: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now }
+}, { versionKey: false }); 
+
+const Comment = mongoose.model('Comment', commentSchema);
+
 // 定义上传记录的数据模型
 const uploadSchema = new mongoose.Schema({
     caption: String,
@@ -74,6 +84,42 @@ const uploadSchema = new mongoose.Schema({
 
 const Upload = mongoose.model('Upload', uploadSchema);
 
+// 添加评论接口
+app.post('/comments', async (req, res) => {
+    try {
+        const { uploadId, username, content } = req.body;
+        
+        const newComment = new Comment({ uploadId, username, content });
+        await newComment.save();
+        
+        res.status(201).json(newComment);
+    } catch (error) {
+        res.status(500).json({ message: '添加评论失败', error: error.message });
+    }
+});
+
+// 获取评论接口
+app.get('/comments', async (req, res) => {
+    try {
+        const { uploadId } = req.query;
+        
+        const comments = await Comment.find({ uploadId }).sort({ createdAt: -1 });
+        res.status(200).json(comments);
+    } catch (error) {
+        res.status(500).json({ message: '获取评论失败', error: error.message });
+    }
+});
+
+// 添加删除评论的API端点
+app.delete('/comments/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await Comment.findByIdAndDelete(id);
+        res.status(200).json({ message: '评论删除成功' });
+    } catch (error) {
+        res.status(500).json({ message: '删除评论失败', error: error.message });
+    }
+});
 
 // 配置 Multer 用于文件上传
 const storage = multer.diskStorage({
