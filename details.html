@@ -203,6 +203,8 @@
         const uploadTime = decodeURIComponent(params.get('uploadTime') || '未知时间');
         const uploadId = params.get('id');
 
+        const role = params.get('role');
+
         const detailsContainer = document.getElementById('detailsContainer');
 
         // 创建标题
@@ -373,12 +375,14 @@
         
         // 在页面加载时检查用户角色
     window.onload = function () {
-        // 检查是否是管理员
-        if (localStorage.getItem('role') === 'admin') {
-            document.body.classList.add('admin');
-        }
-        loadComments();
-    };
+    // 检查是否是管理员（优先使用URL参数）
+    const currentRole = role || localStorage.getItem('role');
+    if (currentRole === 'admin') {
+        document.body.classList.add('admin');
+        console.log('当前是管理员模式'); // 调试用
+    }
+    loadComments();
+};
 
     // 修改评论显示函数
     function displayComments(comments) {

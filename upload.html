@@ -479,9 +479,10 @@ async function searchImages() {
             galleryItem.appendChild(deleteButton);
 
             galleryItem.onclick = function () {
-                const url = `details.html?images=${encodeURIComponent(JSON.stringify(upload.images))}&caption=${encodeURIComponent(upload.caption)}&uploadTime=${encodeURIComponent(upload.uploadTime)}&id=${upload._id}`;
-                window.open(url, '_blank');
-            };
+    const role = new URLSearchParams(window.location.search).get('role');
+    const url = `details.html?images=${encodeURIComponent(JSON.stringify(upload.images))}&caption=${encodeURIComponent(upload.caption)}&uploadTime=${encodeURIComponent(upload.uploadTime)}&id=${upload._id}&role=${role}`;
+    window.open(url, '_blank');
+};
 
             gallery.appendChild(galleryItem);
         }
