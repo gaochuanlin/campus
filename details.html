@@ -187,10 +187,10 @@
     <script>
         // 解析 URL 参数
         const params = new URLSearchParams(window.location.search);
-        const images = JSON.parse(params.get('images') || '[]');
-        const caption = decodeURIComponent(params.get('caption') || '无描述';
+        const images = JSON.parse(decodeURIComponent(params.get('images') || '[]'));
+        const caption = decodeURIComponent(params.get('caption') || '无描述');
         const uploadTime = decodeURIComponent(params.get('uploadTime') || '未知时间');
-        const uploadId = params.get('id'); // 获取上传记录的ID
+        const uploadId = params.get('id');
 
         const detailsContainer = document.getElementById('detailsContainer');
 
