@@ -4,39 +4,406 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>上传内容详情</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        #detailsContainer {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        p {
+            font-size: 16px;
+            color: #666;
+            margin: 10px 0;
+        }
+
+        .preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .preview img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .preview img:hover {
+            transform: scale(1.05);
+        }
+
+        /* 评论区域样式 */
+        .comment-section {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .comment-form {
+            margin-bottom: 20px;
+        }
+
+        .comment-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+            min-height: 80px;
+            margin-bottom: 10px;
+        }
+
+        .comment-submit {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .comment-submit:hover {
+            background-color: #0056b3;
+        }
+
+        .comment-list {
+            margin-top: 20px;
+        }
+
+        .comment-item {
+            border-bottom: 1px solid #eee;
+            padding: 15px 0;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .comment-user {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .comment-time {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .comment-content {
+            color: #333;
+            line-height: 1.5;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            text-align: center;
+        }
+
+        .modal-content img {
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: 10px;
+        }
+
+        /* 箭头样式 */
+        .arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 36px;
+            color: white;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .arrow.left {
+            left: 20px;
+        }
+
+        .arrow.right {
+            right: 20px;
+        }
+
+        /* 关闭按钮样式 */
+        .close-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 36px;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
     <div id="detailsContainer"></div>
+
+    <!-- 模态框 -->
+    <div class="modal" id="modal">
+        <span class="close-button" onclick="closeModal()">&times;</span>
+        <div class="modal-content">
+            <span class="arrow left" onclick="changeImage(-1)">&#10094;</span>
+            <img id="modalImage" src="" alt="放大图片">
+            <span class="arrow right" onclick="changeImage(1)">&#10095;</span>
+        </div>
+    </div>
+
     <script>
+        // 解析 URL 参数
         const params = new URLSearchParams(window.location.search);
-        const images = JSON.parse(params.get('images'));
-        const caption = params.get('caption');
-        const uploadTime = params.get('uploadTime');
+        const images = JSON.parse(params.get('images') || '[]');
+        const caption = decodeURIComponent(params.get('caption') || '无描述';
+        const uploadTime = decodeURIComponent(params.get('uploadTime') || '未知时间');
+        const uploadId = params.get('id'); // 获取上传记录的ID
 
         const detailsContainer = document.getElementById('detailsContainer');
 
+        // 创建标题
         const title = document.createElement('h2');
         title.innerText = '上传内容详情';
         detailsContainer.appendChild(title);
 
+        // 创建上传时间
         const timeNode = document.createElement('p');
         timeNode.innerText = '上传时间: ' + uploadTime;
         detailsContainer.appendChild(timeNode);
 
+        // 创建文字内容
         const captionNode = document.createElement('p');
-        captionNode.innerText = caption;
+        captionNode.innerText = '描述: ' + caption;
         detailsContainer.appendChild(captionNode);
 
+        // 创建图片容器
         const imagesContainer = document.createElement('div');
         imagesContainer.className = 'preview';
         detailsContainer.appendChild(imagesContainer);
 
-        images.forEach(src => {
-            const img = document.createElement('img');
-            img.src = src;
-            imagesContainer.appendChild(img);
-        });
+        // 如果没有图片，显示提示
+        if (images.length === 0) {
+            const noImagesNode = document.createElement('p');
+            noImagesNode.innerText = '暂无图片';
+            imagesContainer.appendChild(noImagesNode);
+        } else {
+            // 遍历图片并添加到页面
+            images.forEach((src, index) => {
+                const img = document.createElement('img');
+                img.src = src;
+                img.alt = '上传的图片';
+                img.onclick = () => openModal(index); // 点击图片打开模态框
+                imagesContainer.appendChild(img);
+            });
+        }
+
+        // 添加评论区域
+        const commentSection = document.createElement('div');
+        commentSection.className = 'comment-section';
+        
+        // 评论标题
+        const commentTitle = document.createElement('h3');
+        commentTitle.innerText = '评论';
+        commentSection.appendChild(commentTitle);
+        
+        // 评论表单
+        const commentForm = document.createElement('div');
+        commentForm.className = 'comment-form';
+        
+        const commentInput = document.createElement('textarea');
+        commentInput.className = 'comment-input';
+        commentInput.placeholder = '写下你的评论...';
+        commentForm.appendChild(commentInput);
+        
+        const commentSubmit = document.createElement('button');
+        commentSubmit.className = 'comment-submit';
+        commentSubmit.innerText = '提交评论';
+        commentSubmit.onclick = submitComment;
+        commentForm.appendChild(commentSubmit);
+        
+        commentSection.appendChild(commentForm);
+        
+        // 评论列表
+        const commentList = document.createElement('div');
+        commentList.className = 'comment-list';
+        commentList.id = 'commentList';
+        commentSection.appendChild(commentList);
+        
+        detailsContainer.appendChild(commentSection);
+
+        // 模态框相关逻辑
+        let currentImageIndex = 0;
+
+        // 打开模态框
+        function openModal(index) {
+            currentImageIndex = index;
+            const modal = document.getElementById('modal');
+            const modalImage = document.getElementById('modalImage');
+            modalImage.src = images[currentImageIndex];
+            modal.style.display = 'flex';
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            modal.style.display = 'none';
+        }
+
+        // 切换图片
+        function changeImage(offset) {
+            currentImageIndex += offset;
+            if (currentImageIndex < 0) {
+                currentImageIndex = images.length - 1;
+            } else if (currentImageIndex >= images.length) {
+                currentImageIndex = 0;
+            }
+            const modalImage = document.getElementById('modalImage');
+            modalImage.src = images[currentImageIndex];
+        }
+
+        // 点击模态框外部关闭模态框
+        window.onclick = function (event) {
+            const modal = document.getElementById('modal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        };
+
+        // 提交评论
+        async function submitComment() {
+            const commentInput = document.querySelector('.comment-input');
+            const comment = commentInput.value.trim();
+            
+            if (!comment) {
+                alert('请输入评论内容');
+                return;
+            }
+            
+            try {
+                // 获取当前登录用户信息（假设存储在localStorage中）
+                const username = localStorage.getItem('username') || '匿名用户';
+                
+                // 发送评论到服务器
+                const response = await fetch('https://campus-activity-platform.onrender.com/comments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        uploadId,
+                        username,
+                        content: comment
+                    }),
+                });
+                
+                if (response.ok) {
+                    // 清空输入框
+                    commentInput.value = '';
+                    
+                    // 重新加载评论
+                    loadComments();
+                } else {
+                    alert('提交评论失败');
+                }
+            } catch (error) {
+                console.error('提交评论失败:', error);
+                alert('提交评论失败');
+            }
+        }
+        
+        // 加载评论
+        async function loadComments() {
+            if (!uploadId) return;
+            
+            try {
+                const response = await fetch(`https://campus-activity-platform.onrender.com/comments?uploadId=${uploadId}`);
+                
+                if (response.ok) {
+                    const comments = await response.json();
+                    displayComments(comments);
+                }
+            } catch (error) {
+                console.error('加载评论失败:', error);
+            }
+        }
+        
+        // 显示评论
+        function displayComments(comments) {
+            const commentList = document.getElementById('commentList');
+            commentList.innerHTML = '';
+            
+            if (comments.length === 0) {
+                const noComments = document.createElement('p');
+                noComments.innerText = '暂无评论';
+                commentList.appendChild(noComments);
+                return;
+            }
+            
+            comments.forEach(comment => {
+                const commentItem = document.createElement('div');
+                commentItem.className = 'comment-item';
+                
+                const commentHeader = document.createElement('div');
+                commentHeader.className = 'comment-header';
+                
+                const commentUser = document.createElement('span');
+                commentUser.className = 'comment-user';
+                commentUser.innerText = comment.username;
+                commentHeader.appendChild(commentUser);
+                
+                const commentTime = document.createElement('span');
+                commentTime.className = 'comment-time';
+                commentTime.innerText = new Date(comment.createdAt).toLocaleString();
+                commentHeader.appendChild(commentTime);
+                
+                const commentContent = document.createElement('div');
+                commentContent.className = 'comment-content';
+                commentContent.innerText = comment.content;
+                
+                commentItem.appendChild(commentHeader);
+                commentItem.appendChild(commentContent);
+                
+                commentList.appendChild(commentItem);
+            });
+        }
+        
+        // 页面加载时获取评论
+        window.onload = function () {
+            loadComments();
+        };
     </script>
 </body>
 </html>

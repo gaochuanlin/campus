@@ -164,6 +164,9 @@ async function login() {
 
         if (response.status === 200) {
             alert(data.message);
+            
+            // 保存用户名到localStorage
+            localStorage.setItem('username', username);
 
             // 根据用户角色跳转到不同页面
             if (data.role === 'admin') {
