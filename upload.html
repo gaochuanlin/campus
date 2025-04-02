@@ -479,7 +479,7 @@ async function searchImages() {
             galleryItem.appendChild(deleteButton);
 
             galleryItem.onclick = function () {
-                const url = `details.html?images=${encodeURIComponent(JSON.stringify(upload.images))}&caption=${encodeURIComponent(upload.caption)}&uploadTime=${encodeURIComponent(upload.uploadTime)}&id=${upload._id}`;
+                const url = `details.html?images=${encodeURIComponent(JSON.stringify(upload.images))}&caption=${encodeURIComponent(upload.caption)}&uploadTime=${encodeURIComponent(upload.uploadTime)}`;
                 window.open(url, '_blank');
             };
 
