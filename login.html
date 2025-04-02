@@ -163,19 +163,18 @@ async function login() {
         const data = await response.json();
 
         if (response.status === 200) {
-            alert(data.message);
-            
-            // 保存用户名到localStorage
-            localStorage.setItem('username', username);
-            localStorage.setItem('role', data.role);
-
-            // 根据用户角色跳转到不同页面
-            if (data.role === 'admin') {
-                window.location.href = 'upload.html?role=admin';
-            } else {
-                window.location.href = 'upload.html?role=user';
-            }
+        alert(data.message);
+        
+        // 保存用户信息和角色到localStorage
+        localStorage.setItem('username', username);
+        localStorage.setItem('role', data.role);
+        
+        if (data.role === 'admin') {
+            window.location.href = 'upload.html?role=admin';
         } else {
+            window.location.href = 'upload.html?role=user';
+        }
+    } else {
             alert(data.message);
         }
     } catch (error) {

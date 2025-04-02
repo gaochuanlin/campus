@@ -64,13 +64,13 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
-// 定义评论模型
+// 评论模型
 const commentSchema = new mongoose.Schema({
     uploadId: { type: mongoose.Schema.Types.ObjectId, required: true },
     username: { type: String, required: true },
     content: { type: String, required: true },
     createdAt: { type: Date, default: Date.now }
-}, { versionKey: false }); 
+}, { versionKey: false });
 
 const Comment = mongoose.model('Comment', commentSchema);
 
@@ -84,7 +84,7 @@ const uploadSchema = new mongoose.Schema({
 
 const Upload = mongoose.model('Upload', uploadSchema);
 
-// 添加评论接口
+// 添加评论API
 app.post('/comments', async (req, res) => {
     try {
         const { uploadId, username, content } = req.body;
@@ -98,7 +98,7 @@ app.post('/comments', async (req, res) => {
     }
 });
 
-// 获取评论接口
+// 获取评论API
 app.get('/comments', async (req, res) => {
     try {
         const { uploadId } = req.query;
@@ -110,7 +110,7 @@ app.get('/comments', async (req, res) => {
     }
 });
 
-// 添加删除评论的API端点
+// 删除评论API
 app.delete('/comments/:id', async (req, res) => {
     try {
         const { id } = req.params;
